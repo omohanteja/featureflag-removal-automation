@@ -1,54 +1,94 @@
-import ollama
 import os
 import re
+import ollama
 
-def remove_flag_condition(code_snippet, flag_key):
+# ========== HELPERS ==========
+
+def strip_code_fences_and_comments(text):
+    text = re.sub(r"^```(?:java)?\s*|```$", "", text.strip(), flags=re.MULTILINE).strip()
+    lines = text.splitlines()
+    return "\n".join(line for line in lines if not line.strip().startswith("//"))
+
+def remove_flag_logic(content: str, flag_path: str, model: str) -> str:
     prompt = f"""
-    Strictly **remove all instances** of the feature flag '{flag_key}' from the following Java code.
-    
-    ✅ DELETE the entire `if` condition checking the flag, along with its code block.  
-    ✅ Preserve all other logic, including methods, class definitions, and imports.  
-    ❌ DO NOT add explanations, summaries, or format the output using markdown (` ```java `).  
-    ❌ DO NOT leave empty brackets `{{}}` behind after flag removal.  
-    ❌ Return **only the cleaned Java code**, properly formatted.
+You are editing a Java file.
 
-    Code:
-    {code_snippet}
-    """
+The feature flag `{flag_path}` is always ENABLED.
 
-    response = ollama.chat(model="gemma3:1b", messages=[{"role": "user", "content": prompt}])
-    cleaned_code = response["message"]["content"]
+🧹 Task:
+- Remove the IF condition that checks the flag: `{flag_path}`.
+- Delete its ELSE block entirely.
+- Keep all code inside the IF block.
+- DO NOT modify the package declaration or any unrelated code.
+- DO NOT add any comments or explanations.
+- Return the cleaned code only — no Markdown or extra text.
 
-    # Ensure Ollama doesn't add markdown formatting
-    cleaned_code = cleaned_code.replace("```java", "").replace("```", "").strip()
+Here is the code:
+{content}
+"""
+    response = ollama.chat(model=model, messages=[{"role": "user", "content": prompt}])
+    return strip_code_fences_and_comments(response["message"]["content"])
 
-    return cleaned_code
+def remove_flag_constant(content: str, flag_name: str, model: str) -> str:
+    prompt = f"""
+You are editing a Java constants file.
 
-def process_java_files(directory, flag_key):
-    if not os.path.exists(directory):
-        print(f"Error: Directory '{directory}' does not exist.")
-        return
-    
-    for root, _, files in os.walk(directory):
+Delete the constant named `{flag_name}`.
+
+- Only delete the line that declares it (e.g. public static final String ... = ...;).
+- Do not change any other code.
+- Do not add any explanation or formatting.
+
+Here is the file:
+{content}
+"""
+    response = ollama.chat(model=model, messages=[{"role": "user", "content": prompt}])
+    return strip_code_fences_and_comments(response["message"]["content"])
+
+def is_constants_file(path: str) -> bool:
+    name = os.path.basename(path)
+    return "Constant" in name or "LDConstants" in name
+
+# ========== MAIN PROCESSING ==========
+
+def process_java_file(file_path, flag_name, model):
+    flag_path = f"LDConstants.{flag_name}"
+    with open(file_path, "r", encoding="utf-8") as f:
+        original = f.read()
+
+    if flag_path not in original and flag_name not in original:
+        return  # Skip
+
+    print(f"🔧 Processing: {file_path}")
+
+    try:
+        if is_constants_file(file_path):
+            cleaned = remove_flag_constant(original, flag_name, model)
+        else:
+            cleaned = remove_flag_logic(original, flag_path, model)
+
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(cleaned)
+
+        print(f"✅ Updated: {file_path}")
+
+    except Exception as e:
+        print(f"❌ Failed to update {file_path}: {e}")
+
+def scan_codebase(root_path, flag_name, model):
+    for root, _, files in os.walk(root_path):
         for file in files:
             if file.endswith(".java"):
-                filepath = os.path.join(root, file)
-                with open(filepath, "r") as f:
-                    code = f.read()
+                full_path = os.path.join(root, file)
+                process_java_file(full_path, flag_name, model)
 
-                modified_code = remove_flag_condition(code, flag_key)
+# ========== ENTRY POINT ==========
 
-                # Clean up stray empty brackets `{}` left behind
-                modified_code = re.sub(r"\s*\{\s*\}\s*", "", modified_code)
+if __name__ == "__main__":
+    flag_name = input("🔍 Enter the feature flag name to remove (e.g., PW_ENABLE_USER_LOGIN_VALIDATION): ").strip()
+    codebase_path = input("📁 Enter the root path to your Java codebase: ").strip()
+    model = "codellama:7b"
 
-                with open(filepath, "w") as f:
-                    f.write(modified_code)
-
-                print(f"✅ Feature flag '{flag_key}' successfully removed from: {filepath}")
-
-
-# Get feature flag key and project path dynamically from user input
-project_path = input("Enter the path to your Java project directory: ").strip()
-flag_key = input("Enter the feature flag key to remove: ").strip()
-
-process_java_files(project_path, flag_key)
+    print(f"\n🚀 Starting cleanup for flag `{flag_name}` in `{codebase_path}` using model `{model}`\n")
+    scan_codebase(codebase_path, flag_name, model)
+    print("\n🏁 Completed.\n")
