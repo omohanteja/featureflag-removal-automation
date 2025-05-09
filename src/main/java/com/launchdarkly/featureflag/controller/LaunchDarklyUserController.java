@@ -21,7 +21,7 @@ public class LaunchDarklyUserController {
                 return "User " + username + " logged in successfully with password!";
             }
 
-            return "WelCome user with validation " + username + "!";
+            return "WelCome user with validation of username and password " + username + "!";
         } else {
             return "Welcome user without validation ";
         }
