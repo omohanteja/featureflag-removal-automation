@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class LaunchDarklyUserController {
 
     @Autowired
-    ILaunchDarklyUserService launchDarklyUserService;
+    private ILaunchDarklyUserService launchDarklyUserService;
 
     @GetMapping("/login")
     public String login(@RequestParam(required = false) String username, @RequestParam(required = false) String password) {
