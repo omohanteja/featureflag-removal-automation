@@ -10,8 +10,7 @@ public class LDUtil implements Serializable {
 
     public static boolean getFlagStatusBySystemIdDefaultFalse(Long systemId, String flagName) {
 
-        List<String> trueEnabledFlagList = Arrays.asList(LDConstants.PW_CONTENT_USERNAME_RESTRICTION,
-                LDConstants.PW_ENABLE_USER_LOGIN_VALIDATION
+        List<String> trueEnabledFlagList = Arrays.asList(LDConstants.PW_CONTENT_USERNAME_RESTRICTION
         );
 
         if(!CollectionUtils.isEmpty(trueEnabledFlagList)) {
