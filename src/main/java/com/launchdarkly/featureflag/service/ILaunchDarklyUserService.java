@@ -2,5 +2,7 @@ package com.launchdarkly.featureflag.service;
 
 public interface ILaunchDarklyUserService {
 
-    String getUserDetail(String username);
+    String validateUserDetails(String username);
+
+    String getUserDetails(String username);
 }

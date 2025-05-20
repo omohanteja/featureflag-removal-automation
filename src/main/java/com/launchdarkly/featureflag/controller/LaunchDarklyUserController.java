@@ -21,10 +21,10 @@ public class LaunchDarklyUserController {
             if (username == null || username.isEmpty()) {
                 return "Username is required!";
             }
-            if (password != null && !password.isEmpty()) {
-                return "User " + username + " logged in successfully with password!";
+            if (password == null || password.isEmpty()) {
+                return "Password is required! for login";
             }
-            return launchDarklyUserService.getUserDetail(username);
+            return launchDarklyUserService.validateUserDetails(username);
         } else {
             return "Welcome user without validation ";
         }
@@ -32,11 +32,10 @@ public class LaunchDarklyUserController {
 
     @GetMapping("/getUserData")
     public String getUserData(@RequestParam String userId) {
-        if(LDUtil.getFlagStatusBySystemIdDefaultFalse(0L,LDConstants.PW_ENABLE_USER_LOGIN_VALIDATION)) {
-            return "Feature flag validation !!!";
+        if(LDUtil.getFlagStatusBySystemIdDefaultFalse(0L,LDConstants.PW_FIND_USER_DETAILS)) {
+            return launchDarklyUserService.getUserDetails(userId);
         }
-
-        return "Data for user ID: " + userId;
+        return "Data not found for user ID: " + userId;
     }
 
 }
