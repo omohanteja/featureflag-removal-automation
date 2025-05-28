@@ -11,7 +11,7 @@ def strip_code_fences_and_comments(text):
 
 def remove_flag_logic(content: str, flag_path: str, model: str) -> str:
     prompt = f"""
-You are a Java code modifier. Strictly Do NOT add any comments and explanations.
+You are a Java code modifier. Do NOT add any comments and explanations.
 
 The goal is to REMOVE any usage of the feature flag `{flag_path}` from the following code.
 
@@ -36,7 +36,7 @@ Here is the file:
 
 def remove_flag_constant(content: str, flag_name: str, model: str) -> str:
     prompt = f"""
-You are editing a Java constants file. Strictly Do NOT add any comments and explanations.
+You are editing a Java constants file. Do NOT add any comments and explanations.
 
 Delete the constant named `{flag_name}`.
 
@@ -56,7 +56,7 @@ Here is the file:
 
 def remove_flag_from_list_reference(content: str, flag_path: str, model: str) -> str:
     prompt = f"""
-You are editing a Java utility file. Strictly Do NOT add any comments and explanations.
+You are editing a Java utility file. Do NOT add any comments and explanations.
 
 The feature flag `{flag_path}` is deprecated.
 
@@ -113,20 +113,40 @@ def process_java_file(file_path, flag_name, model):
     except Exception as e:
         print(f"❌ Failed to update {file_path}: {e}")
 
-def scan_codebase(root_path, flag_name, model):
-    for root, _, files in os.walk(root_path):
+def scan_codebase(code_path, flag_name, model):
+    for root, _, files in os.walk(code_path):
         for file in files:
             if file.endswith(".java"):
                 full_path = os.path.join(root, file)
                 process_java_file(full_path, flag_name, model)
 
+def get_variable_name(file_path, key):
+    for root, _, files in os.walk(file_path):
+        for file in files:
+            if file.endswith(".java"):
+                full_path = os.path.join(root, file)
+                if is_constants_file(full_path):
+                    with open(full_path, "r") as file:
+                        java_code = file.read()
+
+                    # Regex pattern to match the Java constant definition
+                    pattern = rf'public\s+static\s+final\s+String\s+(\w+)\s*=\s*"{key}";'
+                    match = re.search(pattern, java_code)
+                    if match:
+                        return match.group(1)
+    return None
+
 # ========== ENTRY POINT ==========
 
 if __name__ == "__main__":
-    flag_name = input("🔍 Enter the feature flag name to remove (e.g., PW_ENABLE_USER_LOGIN_VALIDATION): ").strip()
+    flag_key = input("🔍 Enter the feature flag name to remove (e.g., pw_enable_user_login_validation): ").strip()
     codebase_path = input("📁 Enter the root path to your Java codebase: ").strip()
     model = "mistral"
 
-    print(f"\n🚀 Starting cleanup for flag `{flag_name}` in `{codebase_path}` using model `{model}`\n")
-    scan_codebase(codebase_path, flag_name, model)
-    print("\n🏁 Completed.\n")
+    flag_name = get_variable_name(codebase_path, flag_key);
+    if flag_name != None:
+        print(f"\n🚀 Starting cleanup for flag `{flag_key}` in `{codebase_path}` using model `{model}`\n")
+        scan_codebase(codebase_path, flag_name, model)
+        print("\n🏁 Completed.\n")
+    else:
+        print(f"\n🚀 Given flag Doesn't present in the code -- `{flag_key}` \n")
