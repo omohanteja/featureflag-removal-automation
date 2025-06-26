@@ -8,7 +8,5 @@ public final class LDConstants {
 
     public static final String PW_VALIDATE_USERNAME = "pw_validate_username";
 
-    public static final String PW_FIND_USER_DETAILS = "pw_validate_username";
+    public static final String PW_FIND_USER_DETAILS = "pw_find_user_details";
 }
-
-
