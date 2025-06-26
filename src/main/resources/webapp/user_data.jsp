@@ -44,7 +44,7 @@
             <td>Engineering</td>
             <td>john.doe@example.com</td>
         </tr>
-        <% if(LDUtil.getFlagStatusBySystemIdDefaultFalse(1L, LDConstants.PW_FIND_USER_DETAILS)) {%>
+        <% if(LDUtil.getFlagStatusBySystemIdDefaultFalse(1L, LDConstants.PW_ENABLE_USER_LOGIN_VALIDATION)) {%>
             <tr>
                 <td>102</td>
                 <td>Jane Smith</td>
