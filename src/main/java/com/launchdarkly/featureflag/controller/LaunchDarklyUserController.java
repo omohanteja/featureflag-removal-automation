@@ -26,6 +26,9 @@ public class LaunchDarklyUserController {
             if (password == null || password.isEmpty()) {
                 return "Password is required! for login";
             }
+            if(LDUtil.getFlagStatusBySystemIdDefaultFalse(0L,LDConstants.PW_FIND_USER_DETAILS)) {
+                return launchDarklyUserService.getUserDetails(username);
+            }
             return launchDarklyUserService.validateUserDetails(username);
         } else {
             return "Welcome user without validation ";
