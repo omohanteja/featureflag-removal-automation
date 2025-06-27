@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Optional;
+
 @RestController
 public class LaunchDarklyUserController {
 
@@ -35,7 +37,13 @@ public class LaunchDarklyUserController {
         if(LDUtil.getFlagStatusBySystemIdDefaultFalse(0L,LDConstants.PW_FIND_USER_DETAILS)) {
             return launchDarklyUserService.getUserDetails(userId);
         }
-        return "Data not found for user ID: " + userId;
+
+        if(!LDUtil.getFlagStatusBySystemIdDefaultFalse(0L,LDConstants.PW_ENABLE_USER_LOGIN_VALIDATION)){
+            Optional<String> userData = Optional.ofNullable(launchDarklyUserService.getUserDetails(userId));
+            return userData.get();
+        } else {
+           return "User found for this userId";
+        }
     }
 
 }
