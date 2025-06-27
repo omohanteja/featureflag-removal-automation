@@ -37,13 +37,8 @@ public class LaunchDarklyUserController {
         if(LDUtil.getFlagStatusBySystemIdDefaultFalse(0L,LDConstants.PW_FIND_USER_DETAILS)) {
             return launchDarklyUserService.getUserDetails(userId);
         }
-
-        if(!LDUtil.getFlagStatusBySystemIdDefaultFalse(0L,LDConstants.PW_ENABLE_USER_LOGIN_VALIDATION)){
-            Optional<String> userData = Optional.ofNullable(launchDarklyUserService.getUserDetails(userId));
-            return userData.get();
-        } else {
-           return "User found for this userId";
-        }
+        Optional<String> userData = Optional.ofNullable(launchDarklyUserService.getUserDetails(userId));
+        return userData.get();
     }
 
 }

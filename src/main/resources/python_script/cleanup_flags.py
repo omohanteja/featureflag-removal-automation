@@ -11,21 +11,19 @@ def strip_code_fences_and_comments(text):
 
 def remove_flag_logic(content: str, flag_path: str, model: str) -> str:
     prompt = f"""
-You are a Java code modifier. Do NOT add any comments and explanations.
-
-The goal is to REMOVE any usage of the feature flag `{flag_path}` from the following code.
-
-🧹 What to do:
-- Remove ONLY the condition that checks `{flag_path}`.
-- If the entire `if` condition is just `{flag_path}`, KEEP the `if` block and delete the `else` block.
-- If the condition is `!{flag_path}`, KEEP the `else` block and delete the `if` block.
-- If `{flag_path}` is part of a compound condition, remove it from the condition and preserve the rest.
-- Do NOT remove unrelated code.
-- Do not change any other code.
-- Do NOT change any indentation and formatting.
-- Do NOT add any extra lines or headers (e.g., "Here is your cleaned code").
-- Do NOT add any comments and explanations.
-- Do NOT wrap output in triple backticks or Markdown.
+I want you to remove all traces of a feature flag from a system. Key notes about how flags are used in code:
+ 
+- Feature flag constants are defined in the LDConstants.java file.
+- Flag values are retrieved one of the following methods in LDUtil: getFlagStatus, getFlagStatusDefaultFalse, getFlagStatusBySystemIdDefaultFalse
+- JSP or JS files might access flag values using a Java Bean in the corresponding action file
+ 
+After I provide you with a flag name:
+1. start by finding all the files where the constant corresponding to that flag is used
+2. Assume the value for that check is always true and remove the redundant checks and unused code resulting from the change
+3. Check if the feature flag check is shared with the frontend via a bean in the Struts Action. If so, look for its usage in JSP and JS (refer to struts xml files if needed).
+4. If you remove a variable containing the flag check, make sure the variable is replaced with true and any redundant block gets removed.
+5. Dont add any extra lines or headers (e.g., "Here is your cleaned code").
+6. Do not change any indentation and formatting.
 
 Here is the file:
 {content}
